@@ -3,6 +3,7 @@ pipeline {
     environment {
         GIT_CREDENTIALS_ID = 'git-credentials'
         DOCKER_IMAGE = 'lokeshmani28/nextjsapplication'
+        VERSION_TAG = "${BUILD_NUMBER}" // Use Jenkins build number as version tag
     }
     stages {
         stage('Clean Workspace') {
@@ -33,8 +34,7 @@ pipeline {
                     dir('reactjs_jenkins') {
                         // Ensure we are in a Git repository before running git commands
                         sh 'git status'
-                        def gitCommitHash = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-                        def versionTag = "v${gitCommitHash}"
+                        def versionTag = "v${BUILD_NUMBER}" // Use Jenkins build number for version tag
 
                         echo "Building image with version tag: ${versionTag}"
 
@@ -60,17 +60,12 @@ pipeline {
             steps {
                 script {
                     echo "Pushing Docker image to Docker Hub..."
+                    def versionTag = "v${BUILD_NUMBER}" // Reuse Jenkins build number for version tag
                     
-                    // Re-enter the 'reactjs_jenkins' directory before running git commands
-                    dir('reactjs_jenkins') {
-                        def gitCommitHash = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-                        def versionTag = "v${gitCommitHash}"
-
-                        sh """
-                        docker push ${DOCKER_IMAGE}:latest
-                        docker push ${DOCKER_IMAGE}:${versionTag}
-                        """
-                    }
+                    sh """
+                    docker push ${DOCKER_IMAGE}:latest
+                    docker push ${DOCKER_IMAGE}:${versionTag}
+                    """
                 }
             }
         }
